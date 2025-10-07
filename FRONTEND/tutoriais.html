@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutoriais - Amigo Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Lora:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Lora', serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-700">
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="index.html">
+                <h1 class="text-2xl font-bold text-slate-800">Amigo Digital</h1>
+            </a>
+            <a href="index.html" class="text-slate-600 hover:text-slate-900 font-medium hover:underline">← Voltar para o Início</a>
+        </nav>
+    </header>
+    <main class="container mx-auto px-6 py-16">
+        <div class="text-center mb-16"><h2 id="page-title" class="text-4xl font-bold text-slate-900">Carregando...</h2></div>
+        <div id="tutorials-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    </main>
+  <footer class="bg-slate-800 text-slate-300 py-8 mt-16">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2025 Amigo Digital. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const tutorialsGrid = document.getElementById('tutorials-grid');
+            const pageTitle = document.getElementById('page-title');
+            const params = new URLSearchParams(window.location.search);
+            const categoryId = params.get('category_id');
+
+            if (!categoryId) { pageTitle.textContent = "Categoria não encontrada!"; return; }
+            
+            try {
+                const response = await fetch(`http://localhost:5001/api/tutorials?category_id=${categoryId}`);
+                const tutorials = await response.json();
+                
+                pageTitle.textContent = "Guias Práticos";
+                if (tutorials.length === 0) { tutorialsGrid.innerHTML = "<p>Nenhum tutorial encontrado para esta categoria.</p>"; return; }
+                
+                tutorialsGrid.innerHTML = '';
+                tutorials.forEach(tutorial => {
+                    const card = document.createElement('a');
+                    card.href = `tutorial.html?id=${tutorial.id}`;
+                    card.className = 'group block bg-white p-6 rounded-xl border border-slate-200 hover:border-amber-400 hover:shadow-lg transition-all duration-300 hover:-translate-y-1';
+                    card.innerHTML = `<h3 class="text-xl font-bold text-slate-800 group-hover:text-amber-700 mb-2">${tutorial.title}</h3><p class="text-slate-500">${tutorial.description}</p>`;
+                    tutorialsGrid.appendChild(card);
+                });
+            } catch (error) {
+                pageTitle.textContent = "Erro ao carregar tutoriais.";
+            }
+        });
+    </script>
+</body>
+</html>

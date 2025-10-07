@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Amigo Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Lora:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Lora', serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-700">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="index.html"><h1 class="text-2xl font-bold text-slate-800">Amigo Digital</h1></a>
+            <a href="index.html" class="text-slate-600 hover:text-slate-900 font-medium hover:underline">← Voltar para o Início</a>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-16 flex justify-center">
+        <div class="w-full max-w-md">
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+                <h2 class="text-3xl font-bold text-slate-900 text-center mb-8">Acesse sua Conta</h2>
+
+                <form id="login-form" class="space-y-6">
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium text-slate-600">Email</label>
+                        <input type="email" id="login-email" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-slate-600">Senha</label>
+                        <input type="password" id="login-password" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                    </div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-700">Entrar</button>
+                </form>
+
+                <form id="register-form" class="space-y-6 hidden">
+                    <div>
+                        <label for="register-email" class="block text-sm font-medium text-slate-600">Email</label>
+                        <input type="email" id="register-email" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                    </div>
+                     <div>
+                        <label for="register-password" class="block text-sm font-medium text-slate-600">Crie uma Senha (mínimo 6 caracteres)</label>
+                        <input type="password" id="register-password" required class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                    </div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">Criar Conta</button>
+                </form>
+                
+                <div class="text-center mt-6">
+                    <a href="#" id="toggle-form" class="text-sm text-slate-600 hover:text-slate-900 hover:underline">Não tem uma conta? Cadastre-se</a>
+                </div>
+                 <p id="message" class="mt-4 text-center text-sm"></p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- 2. COLE SUAS CHAVES DO SUPABASE AQUI ---
+        const SUPABASE_URL = 'https://xcdezoxlrswpxaglcudj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjZGV6b3hscnN3cHhhZ2xjdWRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1NzE5NTYsImV4cCI6MjA3NDE0Nzk1Nn0.Yg_1XesRSP-_IocH2Qdi9dhqsjuJkjDc9K3NThtywwk';
+
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Seleção dos elementos do formulário
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const toggleLink = document.getElementById('toggle-form');
+        const messageEl = document.getElementById('message');
+        const titleEl = document.querySelector('h2');
+
+        // Lógica de CADASTRO
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            messageEl.textContent = 'Criando conta...';
+            messageEl.className = 'mt-4 text-center text-sm text-amber-600';
+
+            const { data, error } = await _supabase.auth.signUp({ email, password });
+
+            if (error) {
+                messageEl.textContent = `Erro: ${error.message}`;
+                messageEl.className = 'mt-4 text-center text-sm text-red-600';
+            } else {
+                messageEl.textContent = 'Conta criada! Por favor, verifique seu e-mail para confirmar antes de fazer o login.';
+                messageEl.className = 'mt-4 text-center text-sm text-green-600';
+            }
+        });
+
+        // Lógica de LOGIN
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            messageEl.textContent = 'Entrando...';
+            messageEl.className = 'mt-4 text-center text-sm text-amber-600';
+
+            const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                messageEl.textContent = `Erro: ${error.message}`;
+                messageEl.className = 'mt-4 text-center text-sm text-red-600';
+            } else {
+                // SUCESSO! Redireciona para a página de dashboard/comentários
+                window.location.href = 'dashboard.html';
+            }
+        });
+
+        // Lógica para alternar entre os formulários de login e cadastro
+        toggleLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.classList.toggle('hidden');
+            registerForm.classList.toggle('hidden');
+            messageEl.textContent = '';
+            
+            if (loginForm.classList.contains('hidden')) {
+                toggleLink.textContent = 'Já tem uma conta? Entre';
+                titleEl.textContent = 'Crie sua Conta';
+            } else {
+                toggleLink.textContent = 'Não tem uma conta? Cadastre-se';
+                titleEl.textContent = 'Acesse sua Conta';
+            }
+        });
+    </script>
+</body>
+</html>

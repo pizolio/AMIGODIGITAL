@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial - Amigo Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Lora:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Lora', serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-700">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="index.html"><h1 class="text-2xl font-bold text-slate-800">Amigo Digital</h1></a>
+            <a href="javascript:history.back()" class="text-slate-600 hover:text-slate-900 font-medium hover:underline">← Voltar</a>
+        </nav>
+    </header>
+
+    <main id="tutorial-content" class="container mx-auto px-6 py-16 max-w-3xl">
+        <h2 class="text-3xl font-bold text-center text-slate-500">Carregando tutorial...</h2>
+    </main>
+    
+    <footer class="bg-slate-800 text-slate-300 py-8 mt-16">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2025 Amigo Digital. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const contentArea = document.getElementById('tutorial-content');
+            
+            // 1. Pega o ID do tutorial da URL (ex: tutorial.html?id=1)
+            const params = new URLSearchParams(window.location.search);
+            const tutorialId = params.get('id');
+
+            if (!tutorialId) {
+                contentArea.innerHTML = '<h2 class="text-3xl font-bold text-red-500 text-center">Erro: Tutorial não especificado.</h2>';
+                return;
+            }
+
+            try {
+                // 2. Chama a API para buscar os detalhes desse tutorial específico
+                const response = await fetch(`http://localhost:5001/api/tutorial?id=${tutorialId}`);
+                if (!response.ok) {
+                    throw new Error('Tutorial não encontrado.');
+                }
+                
+                const tutorial = await response.json();
+                
+                document.title = `${tutorial.title} - Amigo Digital`; 
+                
+                let stepsHtml = '';
+                if (tutorial.content && tutorial.content.steps) {
+                    tutorial.content.steps.forEach((step, index) => {
+                        stepsHtml += `
+                            <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 flex items-start">
+                                <div class="flex-shrink-0 bg-amber-500 text-white rounded-full h-10 w-10 flex items-center justify-center font-bold text-lg mr-5 shadow-inner">${index + 1}</div>
+                                <p class="text-slate-700 text-lg self-center">${step}</p>
+                            </div>
+                        `;
+                    });
+                }
+
+                contentArea.innerHTML = `
+                    <h1 class="text-4xl font-bold text-slate-900 mb-4 text-center">${tutorial.title}</h1>
+                    <p class="text-lg text-slate-600 mb-12 text-center max-w-2xl mx-auto">${tutorial.description}</p>
+                    <div class="space-y-6">
+                        ${stepsHtml}
+                    </div>
+                `;
+
+            } catch (error) {
+                contentArea.innerHTML = `<h2 class="text-3xl font-bold text-red-500 text-center">Não foi possível carregar o tutorial.</h2>`;
+                console.error('Erro:', error);
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amigo Digital - Bem-vindo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Lora:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Lora', serif; }
+        .hero-gradient { background-color: #f8fafc; background-image: radial-gradient(circle at top right, #e0e7ff 30%, #f8fafc 70%); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-700">
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-slate-800">Amigo Digital</h1>
+            <div id="auth-buttons" class="flex items-center space-x-4">
+                <a href="login.html" class="bg-slate-800 text-white font-semibold px-5 py-2 rounded-lg hover:bg-slate-900 transition-all duration-300 shadow">Entrar</a>
+            </div>
+        </nav>
+    </header>
+    <main class="hero-gradient">
+        <div class="container mx-auto px-6 py-24 text-center">
+            <h2 class="text-4xl md:text-6xl font-bold text-slate-900 mb-4 leading-tight">A tecnologia pode ser sua grande aliada.</h2>
+            <p class="text-lg text-slate-600 mb-10 max-w-2xl mx-auto">Guias simples e amigáveis para você navegar no mundo digital com total confiança.</p>
+        </div>
+    </main>
+    <section class="bg-white py-20 -mt-10">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16"><h3 class="text-4xl font-bold text-slate-900">Comece por aqui</h3><p class="text-slate-500 mt-2">Navegue pelos nossos guias práticos.</p></div>
+            <div id="categories-grid" class="grid grid-cols-2 md:grid-cols-3 gap-8"></div>
+        </div>
+    </section>
+      <footer class="bg-slate-800 text-slate-300 py-8 mt-16">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2025 Amigo Digital. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const categoriesGrid = document.getElementById('categories-grid');
+            try {
+                const response = await fetch('http://localhost:5001/api/categories');
+                const categories = await response.json();
+                categoriesGrid.innerHTML = ''; 
+                categories.forEach(category => {
+                    const card = document.createElement('a');
+                    card.href = `tutoriais.html?category_id=${category.id}`; 
+                    card.className = 'group block bg-slate-50 p-6 rounded-xl border border-slate-200 hover:border-amber-400 hover:shadow-lg transition-all duration-300';
+                    card.innerHTML = `<div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center mb-4 transition-transform group-hover:scale-110">${category.icon_svg || ''}</div><h4 class="text-xl font-bold text-slate-800 group-hover:text-amber-700">${category.name}</h4>`;
+                    categoriesGrid.appendChild(card);
+                });
+            } catch (error) {
+                categoriesGrid.innerHTML = '<p class="col-span-full text-center text-red-500">Não foi possível carregar as categorias. Verifique se a API está no ar.</p>';
+                console.error('O erro detalhado que acionou o CATCH foi:', error);
+            }
+        });
+    </script>
+    
+    <script>
+        // Lembre-se de substituir com suas chaves reais do Supabase
+        const SUPABASE_URL = 'https://xcdezoxlrswpxaglcudj.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjZGV6b3hscnN3cHhhZ2xjdWRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1NzE5NTYsImV4cCI6MjA3NDE0Nzk1Nn0.Yg_1XesRSP-_IocH2Qdi9dhqsjuJkjDc9K3NThtywwk';
+
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const authButtonsContainer = document.getElementById('auth-buttons');
+
+        /**
+         * Lida com o logout do usuário.
+         */
+        const handleLogout = async () => {
+            await _supabase.auth.signOut();
+            // Recarrega a página para que o estado de "deslogado" seja exibido
+            window.location.reload();
+        };
+        
+        /**
+         * Verifica a sessão do usuário e atualiza a UI (botões).
+         */
+        const updateUserUI = async () => {
+            const { data, error } = await _supabase.auth.getSession();
+
+            // Se existe uma sessão ativa (usuário logado)
+            if (data.session) {
+                console.log('Usuário está logado. Atualizando a UI.');
+                // Limpa o botão "Entrar" e insere os novos botões
+                authButtonsContainer.innerHTML = `
+                    <button id="logout-button" class="font-medium text-slate-600 hover:text-slate-900">Sair</button>
+                    <a href="dashboard.html" class="bg-blue-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition-all duration-300 shadow">Meu Painel</a>
+                `;
+                // Adiciona o evento de clique ao botão de logout que acabamos de criar
+                document.getElementById('logout-button').addEventListener('click', handleLogout);
+            } else {
+                // Se não há sessão, não faz nada, pois o botão "Entrar" padrão já está correto
+                console.log('Nenhum usuário logado.');
+            }
+        };
+
+        // Chama a função para atualizar a UI assim que a página carrega
+        updateUserUI();
+    </script>
+</body>
+</html>
