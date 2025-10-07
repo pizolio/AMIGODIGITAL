@@ -39,7 +39,7 @@
             if (!categoryId) { pageTitle.textContent = "Categoria não encontrada!"; return; }
             
             try {
-                const response = await fetch(`https://amigodigital-api.onrender.com/api/tutorials?category_id=${categoryId}`);
+                const response = await fetch(`https://amigodigital.onrender.com/api/tutorials?category_id=${categoryId}`);
                 const tutorials = await response.json();
                 
                 pageTitle.textContent = "Guias Práticos";

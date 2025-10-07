@@ -33,8 +33,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const contentArea = document.getElementById('tutorial-content');
-            
-            // 1. Pega o ID do tutorial da URL (ex: tutorial.html?id=1)
             const params = new URLSearchParams(window.location.search);
             const tutorialId = params.get('id');
 
@@ -44,7 +42,6 @@
             }
 
             try {
-                // 2. Chama a API para buscar os detalhes desse tutorial específico
                 const response = await fetch(`https://amigodigital-api.onrender.com/api/tutorial?id=${tutorialId}`);
                 if (!response.ok) {
                     throw new Error('Tutorial não encontrado.');
@@ -55,12 +52,18 @@
                 document.title = `${tutorial.title} - Amigo Digital`; 
                 
                 let stepsHtml = '';
-                if (tutorial.content && tutorial.content.steps) {
+                if (tutorial.content && Array.isArray(tutorial.content.steps)) {
                     tutorial.content.steps.forEach((step, index) => {
+                        // =======================================================
+                        // ESTA É A MODIFICAÇÃO CORRETA PARA O PROBLEMA `[object Object]`
+                        // =======================================================
                         stepsHtml += `
                             <div class="bg-white p-6 rounded-xl shadow-md border border-slate-200 flex items-start">
                                 <div class="flex-shrink-0 bg-amber-500 text-white rounded-full h-10 w-10 flex items-center justify-center font-bold text-lg mr-5 shadow-inner">${index + 1}</div>
-                                <p class="text-slate-700 text-lg self-center">${step}</p>
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-800 mb-1">${step.title}</h3>
+                                    <p class="text-slate-700">${step.text}</p>
+                                </div>
                             </div>
                         `;
                     });
