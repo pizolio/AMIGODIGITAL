@@ -21,8 +21,8 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 # Pega a URL e a Chave de API do Supabase a partir das variáveis de ambiente.
 # Isso é mais seguro e flexível do que colocar as chaves diretamente no código.
 try:
-    supabase_url = os.environ.get("https://xcdezoxlrswpxaglcudj.supabase.co")
-    supabase_key = os.environ.get("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjZGV6b3hscnN3cHhhZ2xjdWRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1NzE5NTYsImV4cCI6MjA3NDE0Nzk1Nn0.Yg_1XesRSP-_IocH2Qdi9dhqsjuJkjDc9K3NThtywwk")
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_KEY")
 
     if not supabase_url or not supabase_key:
         raise ValueError("As variáveis de ambiente SUPABASE_URL e SUPABASE_KEY são necessárias.")
