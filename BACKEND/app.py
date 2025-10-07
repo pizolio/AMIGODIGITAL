@@ -15,7 +15,7 @@ app = Flask(__name__)
 # Permite que seu front-end (rodando em localhost ou em um site publicado)
 # se comunique com esta API.
 # O "*" é um curinga que permite qualquer origem, ideal para começar.
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app)
 
 
 # --- Conexão com o Supabase ---
