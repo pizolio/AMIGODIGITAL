@@ -45,7 +45,7 @@
 
             try {
                 // 2. Chama a API para buscar os detalhes desse tutorial específico
-                const response = await fetch(`http://localhost:5001/api/tutorial?id=${tutorialId}`);
+                const response = await fetch(`https://amigodigital-api.onrender.com/api/tutorial?id=${tutorialId}`);
                 if (!response.ok) {
                     throw new Error('Tutorial não encontrado.');
                 }
