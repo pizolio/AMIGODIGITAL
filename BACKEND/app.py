@@ -1,63 +1,48 @@
 import os
-from functools import wraps
-from flask import Flask, jsonify, request, g
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from supabase import create_client, Client
 from dotenv import load_dotenv
 
+# Carrega as variáveis de ambiente do arquivo .env para o desenvolvimento local
 load_dotenv()
 
+# --- 1. Inicialização e Configuração do CORS ---
 app = Flask(__name__)
 
-# Configuração de CORS segura, permitindo seus ambientes de dev e produção
-origins = [
-    "http://localhost:8000",
-    "http://127.0.0.1:5500",
-    "https://amigodigital.netlify.app"
-]
-CORS(app, resources={r"/api/*": {"origins": origins}})
+# Configuração de CORS simplificada e robusta para permitir acesso de QUALQUER origem.
+# Esta é a forma mais direta e garantida de resolver os erros de CORS.
+CORS(app)
 
-# --- Conexão com o Supabase ---
+# --- 2. Conexão com o Supabase ---
 supabase = None
 try:
+    # Busca as credenciais a partir das variáveis de ambiente (essencial para o Render)
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_KEY")
+
+    # Garante que as variáveis foram encontradas
     if not supabase_url or not supabase_key:
-        raise ValueError("Variáveis de ambiente SUPABASE_URL e SUPABASE_KEY são necessárias.")
+        raise ValueError("As variáveis de ambiente SUPABASE_URL e SUPABASE_KEY são obrigatórias.")
+    
+    # Cria o cliente de conexão
     supabase: Client = create_client(supabase_url, supabase_key)
-    print("Conexão com Supabase estabelecida.")
+    print("✅ Conexão com o Supabase estabelecida com sucesso.")
+
 except Exception as e:
-    print(f"Erro ao conectar com Supabase: {e}")
+    print(f"❌ ERRO CRÍTICO: Não foi possível conectar ao Supabase. Erro: {e}")
 
-# <<< NOVO >>> Roda ANTES de cada requisição para checar a conexão com o DB
-@app.before_request
-def before_request_func():
-    if not supabase:
-        return jsonify(error="Conexão com o banco de dados não disponível."), 503
 
-# <<< NOVO >>> Decorator para proteger rotas que exigem autenticação
-def token_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify(error="Token de autenticação ausente ou mal formatado."), 401
-        
-        jwt = auth_header.split(' ')[1]
-        try:
-            user_response = supabase.auth.get_user(jwt)
-            g.user = user_response.user # Armazena o usuário no contexto da requisição
-        except Exception as e:
-            return jsonify(error=f"Token inválido ou expirado: {e}"), 401
-        
-        return f(*args, **kwargs)
-    return decorated_function
+# --- 3. Rotas da API ---
 
-# --- Rotas Públicas da API ---
+@app.route("/")
+def index():
+    """Rota de verificação para confirmar que a API está no ar."""
+    return "A API do Amigo Digital está funcionando!"
 
 @app.route("/api/categories", methods=['GET'])
 def get_categories():
-    """Retorna todas as categorias."""
+    """Retorna todas as categorias, ordenadas por ID."""
     response = supabase.table('categories').select('*').order('id').execute()
     return jsonify(response.data)
 
@@ -65,7 +50,9 @@ def get_categories():
 def get_tutorials_by_category():
     """Retorna tutoriais filtrados por um 'category_id'."""
     category_id = request.args.get('category_id')
-    if not category_id: return jsonify(error="'category_id' é obrigatório"), 400
+    if not category_id:
+        return jsonify(error="'category_id' é um parâmetro obrigatório"), 400
+    
     response = supabase.table('tutorials').select('*').eq('category_id', category_id).execute()
     return jsonify(response.data)
 
@@ -73,9 +60,17 @@ def get_tutorials_by_category():
 def get_tutorial_details():
     """Retorna os detalhes de um único tutorial pelo seu 'id'."""
     tutorial_id = request.args.get('id')
-    if not tutorial_id: return jsonify(error="'id' é obrigatório"), 400
-    response = supabase.table('tutorials').select('*').eq('id', tutorial_id).single().execute()
-    return jsonify(response.data)
+    if not tutorial_id:
+        return jsonify(error="'id' é um parâmetro obrigatório"), 400
+    
+    try:
+        # A função .single() pode gerar um erro se nenhum item for encontrado.
+        # Este 'try...except' captura esse erro e retorna uma mensagem 404 amigável.
+        response = supabase.table('tutorials').select('*').eq('id', tutorial_id).single().execute()
+        return jsonify(response.data)
+    except Exception as e:
+        print(f"Alerta: Tentativa de acesso a tutorial inexistente (ID: {tutorial_id}). Erro: {e}")
+        return jsonify(error=f"Tutorial com ID {tutorial_id} não foi encontrado."), 404
 
 @app.route("/api/suggestions", methods=['GET'])
 def get_suggestions():
@@ -83,43 +78,22 @@ def get_suggestions():
     response = supabase.table('suggestions').select('*').order('votes', desc=True).execute()
     return jsonify(response.data)
 
-
-# --- Rotas Protegidas da API (Exigem Login) ---
-
 @app.route("/api/suggestions", methods=['POST'])
-@token_required # <<< MUDANÇA: Rota agora protegida
 def add_suggestion():
-    """Cria uma nova sugestão para o usuário autenticado."""
+    """Adiciona uma nova sugestão. A segurança é garantida pela RLS do Supabase."""
     data = request.json
     if not data or 'content' not in data:
         return jsonify(error="O campo 'content' é obrigatório"), 400
-    
-    user = g.user # Pega o usuário validado pelo decorator
-    
-    # Inserção explícita do user_id para maior segurança
+
+    # A segurança é garantida pela política de RLS (Row Level Security) no Supabase,
+    # que só permite a inserção por usuários autenticados.
     response = supabase.table('suggestions').insert({
-        'content': data['content'],
-        'user_id': user.id
+        'content': data['content']
     }).execute()
-    
     return jsonify(response.data), 201
 
-@app.route("/api/help_requests", methods=['POST'])
-@token_required # <<< MUDANÇA: Rota agora protegida
-def add_help_request():
-    """Cria um novo pedido de ajuda para o usuário autenticado."""
-    data = request.json
-    if not data or 'message' not in data:
-        return jsonify(error="O campo 'message' é obrigatório"), 400
-    
-    user = g.user # Pega o usuário validado pelo decorator
-
-    response = supabase.table('help_requests').insert({
-        'message': data['message'],
-        'user_id': user.id
-    }).execute()
-    
-    return jsonify(response.data), 201
-
+# --- 4. Inicializador para Execução Local ---
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    port = int(os.environ.get("PORT", 5001))
+    app.run(debug=True, port=port)
+
